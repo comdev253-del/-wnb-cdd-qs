@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>WNB CDD — Query Communication System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f1a;--bg2:#111827;--bg3:#1a2235;--card:#141e2e;--card2:#1c2840;--border:rgba(99,140,255,0.12);--border2:rgba(99,140,255,0.22);--blue:#3b82f6;--blue2:#60a5fa;--teal:#14b8a6;--red:#ef4444;--red2:#fca5a5;--green:#22c55e;--green2:#86efac;--orange:#f97316;--purple:#8b5cf6;--gold2:#ffd166;--text:#e8edf8;--text2:#8fa3c8;--text3:#4a6080;--radius:14px;--radius-sm:8px;--radius-lg:20px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#splash.hide{animation:splashOut 0.5s ease forwards;}
+@keyframes splashOut{to{opacity:0;pointer-events:none;transform:scale(1.03);}}
+.sring{width:110px;height:110px;border-radius:50%;border:2px solid rgba(99,140,255,0.22);display:flex;align-items:center;justify-content:center;position:relative;animation:rpulse 1.8s ease-in-out infinite;}
+@keyframes rpulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.25);}50%{box-shadow:0 0 0 18px rgba(59,130,246,0);}}
+.sring::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(59,130,246,0.08);animation:rpulse 1.8s ease-in-out infinite 0.4s;}
+.slogo{width:72px;height:72px;background:linear-gradient(135deg,#1d3461,#2563eb);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;}
+.stitle{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-align:center;margin-top:24px;letter-spacing:-0.5px;animation:fup 0.6s ease 0.4s both;}
+.ssub{font-size:13px;color:var(--text2);text-align:center;margin-top:8px;animation:fup 0.6s ease 0.7s both;}
+.sbarw{width:200px;height:3px;background:var(--bg3);border-radius:99px;margin-top:32px;overflow:hidden;animation:fup 0.6s ease 1s both;}
+.sbar{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:99px;animation:lb 2.2s cubic-bezier(.4,0,.2,1) 1.1s forwards;}
+@keyframes lb{to{width:100%;}}
+@keyframes fup{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.scopy{font-size:11px;color:var(--text3);text-align:center;margin-top:20px;animation:fup 0.6s ease 1.3s both;}
+
+/* LOGIN */
+#login-screen{display:none;position:fixed;inset:0;z-index:1500;background:var(--bg);overflow-y:auto;align-items:flex-start;justify-content:center;padding:20px 0 40px;}
+#login-screen.show{display:flex;}
+.lwrap{width:100%;max-width:400px;padding:24px 20px;}
+.llogor{display:flex;align-items:center;gap:14px;margin-bottom:28px;}
+.llogob{width:52px;height:52px;background:linear-gradient(135deg,#1d3461,#2563eb);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.lorg{font-size:11px;color:var(--text2);line-height:1.5;}
+.lorg strong{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:1px;}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;}
+.ltitle{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:-0.4px;}
+.lsub{font-size:12px;color:var(--text3);margin-bottom:22px;}
+.lerr{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:var(--red2);margin-bottom:12px;display:none;}
+.lerr.show{display:block;}
+.lfield{margin-bottom:14px;}
+.llabel{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+.linput{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.linput:focus{border-color:var(--blue);}
+.linput::placeholder{color:var(--text3);}
+.lhint{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:var(--radius-sm);padding:12px 13px;margin-bottom:16px;}
+.lhtitle{font-size:11px;font-weight:600;color:var(--blue2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px;}
+.lhrow{font-size:11px;color:var(--text2);margin-bottom:4px;display:flex;gap:8px;align-items:baseline;}
+.lhrow code{font-family:monospace;font-size:11px;color:var(--text);background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:4px;}
+.lbtn{width:100%;background:linear-gradient(135deg,#1d4ed8,#2563eb);border:none;border-radius:var(--radius-sm);padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+.lbtn:hover{background:linear-gradient(135deg,#1e40af,#1d4ed8);transform:translateY(-1px);}
+.lbtn:active{transform:scale(0.98);}
+.lfooter{text-align:center;font-size:10px;color:var(--text3);margin-top:20px;line-height:1.7;}
+
+/* APP */
+#app{min-height:100vh;display:none;flex-direction:column;max-width:430px;margin:0 auto;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(11,15,26,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;}
+.tbleft{display:flex;flex-direction:column;gap:2px;}
+.tbtitle{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.3px;}
+.tbsub{font-size:11px;color:var(--text3);}
+.tbright{display:flex;align-items:center;gap:10px;}
+.nbell{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background 0.2s;font-size:16px;}
+.nbell:hover{background:var(--card2);}
+.ndot{position:absolute;top:6px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg);animation:dp 2s ease-in-out infinite;}
+@keyframes dp{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}
+.avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,0.1);cursor:pointer;}
+
+/* ROLE BANNER */
+.rbanner{display:flex;align-items:center;gap:8px;padding:7px 16px;font-size:11px;font-weight:600;border-bottom:1px solid var(--border);}
+.rbanner.admin{background:rgba(139,92,246,0.1);color:#c4b5fd;}
+.rbanner.officer{background:rgba(59,130,246,0.08);color:var(--blue2);}
+
+/* SCROLL */
+.scrollw{flex:1;overflow-y:auto;padding:16px;padding-bottom:88px;scrollbar-width:none;}
+.scrollw::-webkit-scrollbar{display:none;}
+
+/* HERO */
+.dhero{background:linear-gradient(135deg,#0f2044 0%,#142236 50%,#0d1b2e 100%);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.dhero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.15) 0%,transparent 70%);pointer-events:none;}
+.dhero::after{content:'';position:absolute;bottom:-30px;left:40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(20,184,166,0.1) 0%,transparent 70%);pointer-events:none;}
+.hgreet{font-size:13px;color:var(--text2);margin-bottom:4px;}
+.hname{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:14px;letter-spacing:-0.5px;}
+.hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.hstat{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 10px 8px;}
+.hval{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;line-height:1;margin-bottom:4px;}
+.hlbl{font-size:10px;color:var(--text2);line-height:1.3;}
+
+/* RING */
+.ringw{display:flex;justify-content:center;margin:20px 0 16px;position:relative;}
+.rarc{fill:none;stroke-width:8;stroke-linecap:round;transform-origin:70px 70px;transform:rotate(-90deg);transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.rcentr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.rpct{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1;}
+.rlbl{font-size:11px;color:var(--text2);margin-top:3px;}
+
+/* SECTION */
+.sech{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:20px;}
+.sectitle{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.3px;}
+.secmore{font-size:12px;color:var(--blue2);cursor:pointer;}
+
+/* ALERT CARDS */
+.alist{display:flex;flex-direction:column;gap:10px;}
+.acard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:border-color 0.2s,background 0.2s,transform 0.15s;animation:slin 0.4s ease both;}
+.acard:active{transform:scale(0.98);}
+.acard:hover{border-color:var(--border2);background:var(--card2);}
+@keyframes slin{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.aicon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.abody{flex:1;min-width:0;}
+.atitle{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ameta{font-size:12px;color:var(--text2);display:flex;gap:8px;align-items:center;margin-bottom:5px;}
+.asnip{font-size:12px;color:var(--text3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.bc{background:rgba(239,68,68,0.15);color:var(--red2);}
+.bh{background:rgba(249,115,22,0.15);color:#fdba74;}
+.bm{background:rgba(245,166,35,0.15);color:var(--gold2);}
+.bl{background:rgba(34,197,94,0.15);color:var(--green2);}
+.bi{background:rgba(59,130,246,0.15);color:var(--blue2);}
+.br{background:rgba(20,184,166,0.12);color:#5eead4;}
+.ba{background:rgba(139,92,246,0.2);color:#c4b5fd;}
+.bo{background:rgba(59,130,246,0.15);color:var(--blue2);}
+.udot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;align-self:center;}
+
+/* QUICK ACTIONS */
+.qagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.qabtn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:all 0.2s;animation:fup 0.4s ease both;}
+.qabtn:hover{border-color:var(--border2);background:var(--card2);transform:translateY(-2px);}
+.qabtn:active{transform:scale(0.96);}
+.qaicon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.qalbl{font-size:10px;color:var(--text2);text-align:center;line-height:1.3;}
+
+/* CHART */
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:4px;}
+.barchart{display:flex;align-items:flex-end;gap:6px;height:60px;}
+.barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;}
+.barlbl{font-size:9px;color:var(--text3);}
+@keyframes gbar{from{height:0%;}to{height:var(--t);}}
+.gbar{animation:gbar 1s cubic-bezier(.4,0,.2,1) both;}
+
+/* FORM */
+.qform{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:4px;}
+.fg{margin-bottom:12px;}
+.fl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.fi:focus{border-color:var(--blue);}
+.fi::placeholder{color:var(--text3);}
+.fs{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;appearance:none;cursor:pointer;}
+.fta{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;resize:none;min-height:80px;transition:border-color 0.2s;}
+.fta:focus{border-color:var(--blue);}
+.sbtn{width:100%;background:linear-gradient(135deg,#1d4ed8,#2563eb);border:none;border-radius:var(--radius-sm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.sbtn:hover{background:linear-gradient(135deg,#1e40af,#1d4ed8);transform:translateY(-1px);}
+.sbtn:active{transform:scale(0.98);}
+.dbtn{width:100%;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--red2);cursor:pointer;transition:all 0.2s;}
+.dbtn:hover{background:rgba(239,68,68,0.2);}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;}
+.tli{display:flex;gap:12px;padding-bottom:16px;}
+.tldw{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.tld{width:12px;height:12px;border-radius:50%;border:2px solid var(--bg);flex-shrink:0;margin-top:4px;}
+.tll{width:1px;flex:1;background:var(--border);margin-top:4px;}
+.tlb{flex:1;}
+.tltitle{font-size:13px;font-weight:600;margin-bottom:2px;}
+.tltime{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.tldesc{font-size:12px;color:var(--text2);line-height:1.5;}
+
+/* NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(11,15,26,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;}
+.nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;transition:all 0.2s;position:relative;}
+.nico{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:transform 0.2s;}
+.nlbl{font-size:10px;color:var(--text3);transition:color 0.2s;}
+.nitem.active .nlbl{color:var(--blue2);}
+.nitem.active .nico{transform:scale(1.1);}
+.nitem.active::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--blue);border-radius:99px;}
+.nbadge{position:absolute;top:0;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:8px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
+
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
+
+/* ADMIN */
+.asec{background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.asectitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#c4b5fd;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.ocard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.oav{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.oinfo{flex:1;min-width:0;}
+.oname{font-size:13px;font-weight:600;}
+.ometa{font-size:11px;color:var(--text3);margin-top:1px;}
+.oacts{display:flex;gap:6px;}
+.icbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.2s;}
+.icbtn:hover{background:var(--card2);border-color:var(--border2);}
+.icbtn.del:hover{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.moverlay.open{display:flex;}
+.msheet{background:var(--bg2);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);width:100%;max-width:430px;padding:20px;max-height:78vh;overflow-y:auto;animation:shup 0.3s ease;position:relative;}
+@keyframes shup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.mhandle{width:36px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 20px;}
+.mtitle{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px;}
+.mclose{position:absolute;top:16px;right:16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text2);}
+.mfield{display:flex;gap:8px;margin-bottom:10px;font-size:13px;}
+.mkey{color:var(--text2);min-width:90px;}
+.mdiv{height:1px;background:var(--border);margin:14px 0;}
+.arow{display:flex;gap:8px;margin-top:16px;}
+.abtn{flex:1;border-radius:var(--radius-sm);padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.abtnp{background:linear-gradient(135deg,#1d4ed8,#2563eb);border:none;color:#fff;}
+.abtns{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.abtnd{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--red2);}
+
+/* STATUS */
+.statusrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a2e4a;border:1px solid var(--blue);border-radius:12px;padding:12px 20px;font-size:13px;display:flex;align-items:center;gap:8px;opacity:0;transition:all 0.3s;z-index:600;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 20px;color:var(--text3);}
+.emptyico{font-size:38px;margin-bottom:10px;}
+.emptytxt{font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sring"><div class="slogo">🏛️</div></div>
+  <div class="stitle">CDD Alert System</div>
+  <div class="ssub">West New Britain Provincial Administration<br>Community Development Division</div>
+  <div class="sbarw"><div class="sbar"></div></div>
+  <div class="scopy">© 2026 Naitech's Prod. All Rights Reserved.</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="lwrap">
+    <div class="llogor">
+      <div class="llogob">🏛️</div>
+      <div class="lorg"><strong>WNB CDD Query System</strong>West New Britain Provincial Administration<br>Community Development Division</div>
+    </div>
+    <div class="lcard">
+      <div class="ltitle">Sign In</div>
+      <div class="lsub">Enter your credentials to access the system</div>
+      <div class="lerr" id="lerr">⚠️ Invalid username or password. Please try again.</div>
+      <div class="lfield">
+        <label class="llabel">Username</label>
+        <input class="linput" type="text" id="luser" placeholder="Enter your username" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="lfield">
+        <label class="llabel">Password</label>
+        <input class="linput" type="password" id="lpass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="lhint">
+        <div class="lhtitle">🔑 Demo Credentials</div>
+        <div class="lhrow" style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(99,140,255,0.1);">
+          <span style="color:#c4b5fd;font-weight:600;">Admin (Full Access):</span><code>admin</code><code>Admin@CDD2026</code>
+        </div>
+        <div class="lhrow"><span>Officer 1 — Peter Kama:</span><code>officer01</code><code>Officer@01</code></div>
+        <div class="lhrow"><span>Officer 2 — Mary Tamu:</span><code>officer02</code><code>Officer@02</code></div>
+        <div class="lhrow"><span>Officer 3 — John Awi:</span><code>officer03</code><code>Officer@03</code></div>
+        <div class="lhrow"><span>Officer 4 — Grace Walo:</span><code>officer04</code><code>Officer@04</code></div>
+      </div>
+      <button class="lbtn" onclick="doLogin()">🔐 Sign In to System</button>
+    </div>
+    <div class="lfooter">WNB CDD Query Communication & Alert System v1.0.0<br>© 2026 Naitech's Prod · West New Britain Provincial Administration<br>Authorised personnel only. Unauthorised access is prohibited.</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tbleft"><div class="tbtitle">WNB CDD</div><div class="tbsub" id="clock">—</div></div>
+    <div class="tbright">
+      <div class="nbell" onclick="showToast('🔔 3 unread notifications')">🔔<div class="ndot"></div></div>
+      <div class="avatar" id="topav" onclick="switchView('profile')">--</div>
+    </div>
+  </div>
+  <div class="rbanner" id="rbanner"><span id="rbtxt"></span></div>
+
+  <div class="scrollw">
+
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <div class="dhero">
+        <div class="hgreet" id="hgreet">Good morning,</div>
+        <div class="hname" id="hname">Loading… 👋</div>
+        <div class="hstats">
+          <div class="hstat"><div class="hval" style="color:#60a5fa;" id="c1">0</div><div class="hlbl">Total Queries</div></div>
+          <div class="hstat"><div class="hval" style="color:#fbbf24;" id="c2">0</div><div class="hlbl">Pending</div></div>
+          <div class="hstat"><div class="hval" style="color:#34d399;" id="c3">0</div><div class="hlbl">Resolved</div></div>
+        </div>
+      </div>
+      <div class="ringw">
+        <svg width="140" height="140" viewBox="0 0 140 140" style="overflow:visible;">
+          <defs><linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient></defs>
+          <circle cx="70" cy="70" r="58" fill="none" stroke="var(--bg3)" stroke-width="8"/>
+          <circle id="rarc" class="rarc" cx="70" cy="70" r="58" stroke="url(#rg)" stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+        </svg>
+        <div class="rcentr"><div class="rpct" id="rpct">0%</div><div class="rlbl">Resolution Rate</div></div>
+      </div>
+      <div class="sech"><div class="sectitle">Quick Actions</div></div>
+      <div class="qagrid" id="qagrid"></div>
+      <div class="sech" style="margin-top:16px;"><div class="sectitle">Weekly Activity</div><div class="secmore">This week</div></div>
+      <div class="ccard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <div><div style="font-size:13px;font-weight:600;">Queries Submitted</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Mon — Sun</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;" id="wk-total">47</div><div style="font-size:11px;color:var(--green2);">↑ 12% vs last week</div></div>
+        </div>
+        <div class="barchart" id="barchart"></div>
+      </div>
+      <div class="sech"><div class="sectitle">Recent Alerts</div><div class="secmore" onclick="switchView('alerts')">See all</div></div>
+      <div class="alist" id="recent-alerts"></div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="view" id="view-alerts">
+      <div class="sech" style="margin-top:4px;"><div class="sectitle">All Alerts</div></div>
+      <div class="statusrow">
+        <span class="badge bc" style="padding:5px 12px;cursor:pointer;" onclick="filterAlerts('critical')">🔴 Critical</span>
+        <span class="badge bh" style="padding:5px 12px;cursor:pointer;" onclick="filterAlerts('high')">🟠 High</span>
+        <span class="badge bm" style="padding:5px 12px;cursor:pointer;" onclick="filterAlerts('medium')">🟡 Medium</span>
+        <span class="badge bl" style="padding:5px 12px;cursor:pointer;" onclick="filterAlerts('low')">🟢 Low</span>
+        <span class="badge bi" style="padding:5px 12px;cursor:pointer;" onclick="filterAlerts('all')">All</span>
+      </div>
+      <div class="alist" id="all-alerts"></div>
+    </div>
+
+    <!-- QUERIES -->
+    <div class="view" id="view-queries">
+      <div class="sech" style="margin-top:4px;"><div class="sectitle">Submit a Query</div></div>
+      <div class="qform">
+        <div class="fg"><label class="fl">Query Subject</label><input class="fi" type="text" placeholder="Enter subject…" id="qs"/></div>
+        <div class="fg"><label class="fl">Category</label>
+          <select class="fs" id="qc">
+            <option value="">— Select Category —</option>
+            <option>Infrastructure Development</option><option>Community Programs</option>
+            <option>Budget & Finance</option><option>Human Resources</option>
+            <option>Land & Planning</option><option>Health Services</option>
+            <option>Education</option><option>General Inquiry</option>
+          </select></div>
+        <div class="fg"><label class="fl">Priority Level</label>
+          <select class="fs" id="qp">
+            <option value="">— Select Priority —</option>
+            <option value="critical">🔴 Critical</option><option value="high">🟠 High</option>
+            <option value="medium">🟡 Medium</option><option value="low">🟢 Low</option>
+          </select></div>
+        <div class="fg"><label class="fl">Department / Division</label><input class="fi" type="text" placeholder="e.g. Kimbe District Office" id="qd"/></div>
+        <div class="fg"><label class="fl">Description</label><textarea class="fta" placeholder="Describe your query in detail…" id="qdesc"></textarea></div>
+        <div class="fg"><label class="fl">Contact (optional)</label><input class="fi" type="text" placeholder="Phone or email" id="qcon"/></div>
+        <button class="sbtn" onclick="submitQuery()">📤 Submit Query</button>
+      </div>
+      <div class="sech" style="margin-top:20px;"><div class="sectitle">My Submissions</div></div>
+      <div class="alist" id="my-queries"></div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="view" id="view-status">
+      <div class="sech" style="margin-top:4px;"><div class="sectitle">System Status</div><div class="secmore" style="color:var(--green2);">● Live</div></div>
+      <div class="ccard" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green);animation:dp 2s infinite;"></div>
+          <span style="font-size:14px;font-weight:600;">All Systems Operational</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="sys-status"></div>
+      </div>
+      <div class="sech"><div class="sectitle">Activity Timeline</div></div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="view" id="view-admin">
+      <div class="sech" style="margin-top:4px;"><div class="sectitle">⚙️ Admin Panel</div><span class="badge ba">Admin Only</span></div>
+
+      <div class="asec">
+        <div class="asectitle">👥 Officer Accounts</div>
+        <div id="officer-list"></div>
+        <button class="sbtn" onclick="openAddOfficer()" style="margin-top:8px;background:linear-gradient(135deg,#5b21b6,#7c3aed);">➕ Add New Officer</button>
+      </div>
+
+      <div class="asec">
+        <div class="asectitle">📢 Broadcast Alert</div>
+        <div class="fg"><label class="fl">Alert Title</label><input class="fi" type="text" id="bc-title" placeholder="Alert subject…"/></div>
+        <div class="fg"><label class="fl">Priority</label>
+          <select class="fs" id="bc-pri">
+            <option value="critical">🔴 Critical</option><option value="high">🟠 High</option>
+            <option value="medium">🟡 Medium</option><option value="info">🔵 Info</option>
+          </select></div>
+        <div class="fg"><label class="fl">Message</label><textarea class="fta" id="bc-msg" placeholder="Alert message…"></textarea></div>
+        <button class="sbtn" onclick="broadcastAlert()">📡 Broadcast to All Officers</button>
+      </div>
+
+      <div class="asec">
+        <div class="asectitle">📋 All Submitted Queries</div>
+        <div class="alist" id="admin-queries"></div>
+      </div>
+
+      <div class="asec">
+        <div class="asectitle">🔗 Alert Log</div>
+        <div class="alist" id="admin-alerts"></div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="view" id="view-profile">
+      <div class="sech" style="margin-top:4px;"><div class="sectitle">Profile & Settings</div></div>
+      <div class="ccard" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+          <div id="pav" style="width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;">--</div>
+          <div>
+            <div id="pname" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;"></div>
+            <div id="ptitle" style="font-size:12px;color:var(--text2);margin-top:2px;"></div>
+            <div style="margin-top:6px;" id="pbadge"></div>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border);margin-bottom:12px;"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;" id="pfields"></div>
+      </div>
+      <div class="sectitle" style="margin-bottom:12px;font-size:14px;">Preferences</div>
+      <div id="prefs" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="margin-top:20px;"><button class="dbtn" onclick="doLogout()">🚪 Sign Out</button></div>
+      <div style="margin-top:28px;text-align:center;">
+        <div style="font-size:11px;color:var(--text3);">WNB CDD Query Communication System v1.0.0</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;">© 2026 Naitech's Prod. All Rights Reserved.</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;">West New Britain Provincial Administration</div>
+      </div>
+    </div>
+
+  </div><!-- /scrollw -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav" id="bnav">
+    <div class="nitem active" onclick="switchView('home')" id="nav-home"><div class="nico">🏠</div><div class="nlbl">Home</div></div>
+    <div class="nitem" onclick="switchView('alerts')" id="nav-alerts"><div class="nico">🚨</div><div class="nlbl">Alerts</div><div class="nbadge" id="alert-badge">3</div></div>
+    <div class="nitem" onclick="switchView('queries')" id="nav-queries"><div class="nico">📋</div><div class="nlbl">Queries</div></div>
+    <div class="nitem" onclick="switchView('status')" id="nav-status"><div class="nico">📡</div><div class="nlbl">Status</div></div>
+    <div class="nitem" onclick="switchView('admin')" id="nav-admin" style="display:none;"><div class="nico">⚙️</div><div class="nlbl">Admin</div></div>
+    <div class="nitem" onclick="switchView('profile')" id="nav-profile"><div class="nico">👤</div><div class="nlbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="modal" onclick="closeModal(event)">
+  <div class="msheet" id="msheet">
+    <div class="mhandle"></div>
+    <div class="mclose" onclick="closeModal()">✕</div>
+    <div id="mcontent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════
+// USER DATABASE
+// ═══════════════════════════
+const USERS = {
+  admin:{username:'admin',password:'Admin@CDD2026',role:'admin',name:'System Administrator',title:'CDD System Administrator',division:'Community Development Division',province:'West New Britain',station:'Kimbe HQ',empId:'CDD-ADMIN-001',initials:'SA',avatarGrad:'linear-gradient(135deg,#7c3aed,#db2777)'},
+  officer01:{username:'officer01',password:'Officer@01',role:'officer',name:'Peter Kama',title:'Development Officer I',division:'Infrastructure & Planning',province:'West New Britain',station:'Kimbe District',empId:'CDD-0241',initials:'PK',avatarGrad:'linear-gradient(135deg,#1d4ed8,#0891b2)'},
+  officer02:{username:'officer02',password:'Officer@02',role:'officer',name:'Mary Tamu',title:'Community Programs Officer',division:'Community Programs',province:'West New Britain',station:'Hoskins Sub-District',empId:'CDD-0244',initials:'MT',avatarGrad:'linear-gradient(135deg,#0f766e,#0891b2)'},
+  officer03:{username:'officer03',password:'Officer@03',role:'officer',name:'John Awi',title:'Finance & Budget Officer',division:'Budget & Finance',province:'West New Britain',station:'Kimbe HQ',empId:'CDD-0247',initials:'JA',avatarGrad:'linear-gradient(135deg,#d97706,#b45309)'},
+  officer04:{username:'officer04',password:'Officer@04',role:'officer',name:'Grace Walo',title:'Field Monitoring Officer',division:'Field Operations',province:'West New Britain',station:'Talasea Sub-District',empId:'CDD-0252',initials:'GW',avatarGrad:'linear-gradient(135deg,#059669,#10b981)'}
+};
+const dynamicOfficers = {};
+let currentUser = null;
+const submittedQueries = [];
+const broadcastAlerts = [];
+
+function getAllUsers(){ return {...USERS,...dynamicOfficers}; }
+
+// ═══════════════════════════
+// AUTH
+// ═══════════════════════════
+function doLogin(){
+  const u=document.getElementById('luser').value.trim().toLowerCase();
+  const p=document.getElementById('lpass').value;
+  const err=document.getElementById('lerr');
+  const all=getAllUsers();
+  if(all[u]&&all[u].password===p){
+    err.classList.remove('show');
+    currentUser=all[u];
+    document.getElementById('login-screen').classList.remove('show');
+    bootApp();
+  } else {
+    err.classList.add('show');
+    document.getElementById('lpass').value='';
+  }
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('luser').value='';
+  document.getElementById('lpass').value='';
+  document.getElementById('login-screen').classList.add('show');
+  showToast('👋 Signed out successfully');
+}
+
+// ═══════════════════════════
+// BOOT
+// ═══════════════════════════
+function bootApp(){
+  const u=currentUser;
+  document.getElementById('app').classList.add('show');
+
+  // Avatar
+  const av=document.getElementById('topav');
+  av.textContent=u.initials;
+  av.style.background=u.avatarGrad;
+
+  // Banner
+  const rb=document.getElementById('rbanner');
+  const rbt=document.getElementById('rbtxt');
+  if(u.role==='admin'){
+    rb.className='rbanner admin';
+    rbt.innerHTML='👑 Administrator — Full System Access Granted';
+    document.getElementById('nav-admin').style.display='flex';
+  } else {
+    rb.className='rbanner officer';
+    rbt.innerHTML=`🪪 ${u.name} · ${u.division} · ${u.station}`;
+    document.getElementById('nav-admin').style.display='none';
+  }
+
+  // Hero
+  const hr=new Date().getHours();
+  document.getElementById('hgreet').textContent=hr<12?'Good morning,':hr<17?'Good afternoon,':'Good evening,';
+  document.getElementById('hname').textContent=u.name+' 👋';
+
+  // Stats (admin sees all, officer sees own slice)
+  const isA=u.role==='admin';
+  ctr(document.getElementById('c1'),isA?58:12);
+  ctr(document.getElementById('c2'),isA?14:3);
+  ctr(document.getElementById('c3'),isA?44:9);
+  animRing(isA?76:75);
+
+  buildQA();
+  buildProfile();
+  renderAll();
+  switchView('home');
+}
+
+// ═══════════════════════════
+// QUICK ACTIONS
+// ═══════════════════════════
+function buildQA(){
+  const g=document.getElementById('qagrid');
+  g.innerHTML='';
+  const isA=currentUser.role==='admin';
+  const acts=isA?[
+    {icon:'🚨',bg:'rgba(239,68,68,0.15)',lbl:'Alerts',v:'alerts'},
+    {icon:'⚙️',bg:'rgba(139,92,246,0.15)',lbl:'Admin',v:'admin'},
+    {icon:'📋',bg:'rgba(59,130,246,0.15)',lbl:'Queries',v:'queries'},
+    {icon:'📡',bg:'rgba(20,184,166,0.15)',lbl:'Status',v:'status'}
+  ]:[
+    {icon:'📋',bg:'rgba(59,130,246,0.15)',lbl:'New Query',v:'queries'},
+    {icon:'🚨',bg:'rgba(239,68,68,0.15)',lbl:'Alerts',v:'alerts'},
+    {icon:'📡',bg:'rgba(20,184,166,0.15)',lbl:'Status',v:'status'},
+    {icon:'👤',bg:'rgba(139,92,246,0.15)',lbl:'Profile',v:'profile'}
+  ];
+  acts.forEach((a,i)=>{
+    const b=document.createElement('div');
+    b.className='qabtn';
+    b.style.animationDelay=(0.1+i*0.05)+'s';
+    b.innerHTML=`<div class="qaicon" style="background:${a.bg};">${a.icon}</div><div class="qalbl">${a.lbl}</div>`;
+    b.onclick=()=>switchView(a.v);
+    g.appendChild(b);
+  });
+}
+
+// ═══════════════════════════
+// PROFILE
+// ═══════════════════════════
+function buildProfile(){
+  const u=currentUser;
+  document.getElementById('pav').textContent=u.initials;
+  document.getElementById('pav').style.background=u.avatarGrad;
+  document.getElementById('pname').textContent=u.name;
+  document.getElementById('ptitle').textContent=u.title;
+  document.getElementById('pbadge').innerHTML=u.role==='admin'
+    ?'<span class="badge ba">👑 Administrator</span>'
+    :'<span class="badge bo">🪪 Officer</span>';
+  document.getElementById('pfields').innerHTML=`
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Username</span><span>${u.username}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Division</span><span>${u.division}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Province</span><span>${u.province}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Station</span><span>${u.station}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Employee ID</span><span>${u.empId}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Access Level</span>
+      <span style="color:${u.role==='admin'?'#c4b5fd':'var(--blue2)'};">${u.role==='admin'?'Full Admin Access':'Standard Officer'}</span>
+    </div>`;
+  // Prefs
+  const pl=document.getElementById('prefs');
+  pl.innerHTML='';
+  [{l:'Push Notifications',on:true},{l:'Email Alerts',on:true},{l:'Critical Alerts Only',on:false},{l:'Dark Mode',on:true}].forEach(p=>{
+    const r=document.createElement('div');
+    r.style.cssText='display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;';
+    r.innerHTML=`<span style="font-size:13px;">${p.l}</span>
+      <div onclick="togPref(this)" data-on="${p.on}" style="width:40px;height:22px;border-radius:99px;background:${p.on?'#2563eb':'var(--bg3)'};border:1px solid ${p.on?'#3b82f6':'var(--border)'};position:relative;cursor:pointer;transition:all .3s;">
+        <div style="position:absolute;top:2px;left:${p.on?'20px':'2px'};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .3s;"></div>
+      </div>`;
+    pl.appendChild(r);
+  });
+}
+
+function togPref(el){
+  const on=el.dataset.on==='true';
+  el.dataset.on=!on;
+  el.style.background=!on?'#2563eb':'var(--bg3)';
+  el.style.border=`1px solid ${!on?'#3b82f6':'var(--border)'}`;
+  el.children[0].style.left=!on?'20px':'2px';
+  showToast((!on?'✅ Enabled':'❌ Disabled')+': '+el.parentElement.querySelector('span').textContent);
+}
+
+// ═══════════════════════════
+// ALERTS DATA
+// ═══════════════════════════
+const alertsDB=[
+  {id:1,icon:'🔴',bg:'rgba(239,68,68,0.15)',title:'Infrastructure Damage — Hoskins Road',priority:'critical',badge:'bc',btxt:'Critical',from:'Kimbe District Office',time:'08:14 AM',date:'Today',snip:'Major pothole and erosion damage on Hoskins-Kimbe highway km 24. Road is partially impassable. Immediate action required.',status:'Open',ref:'WNBCDD-2026-0142',assigned:'Div. Engineer Team'},
+  {id:2,icon:'🟠',bg:'rgba(249,115,22,0.15)',title:'Community Grant Disbursement Delay',priority:'high',badge:'bh',btxt:'High',from:'Talasea Sub-District',time:'07:45 AM',date:'Today',snip:'Three community groups have not received Q1 2026 development grants. Bank transfer stalled.',status:'In Progress',ref:'WNBCDD-2026-0139',assigned:'Finance Officer'},
+  {id:3,icon:'🟡',bg:'rgba(245,166,35,0.15)',title:'Water Supply Issue — Bialla LLG',priority:'medium',badge:'bm',btxt:'Medium',from:'Bialla District',time:'06:30 AM',date:'Today',snip:'Broken water pump at Bialla main supply station. Approx. 2,400 residents affected. Parts ordered.',status:'In Progress',ref:'WNBCDD-2026-0137',assigned:'Water & Sanitation Unit'},
+  {id:4,icon:'🟢',bg:'rgba(34,197,94,0.15)',title:'Youth Skills Training — Kimbe',priority:'low',badge:'bl',btxt:'Low',from:'CDD HQ',time:'Yesterday',date:'Mar 23',snip:'Annual youth vocational training enrollment opens April 7, 2026. Centers at Kimbe and Hoskins.',status:'Resolved',ref:'WNBCDD-2026-0130',assigned:'Youth Programs Team'},
+  {id:5,icon:'🔵',bg:'rgba(59,130,246,0.15)',title:'Policy Update: CDD Procurement Rules',priority:'info',badge:'bi',btxt:'Info',from:'Admin Division',time:'Mar 22',date:'Mar 22',snip:'Updated procurement guidelines effective April 1, 2026. All officers must complete compliance review by March 31.',status:'Resolved',ref:'WNBCDD-2026-0127',assigned:'All Staff'},
+  {id:6,icon:'🔴',bg:'rgba(239,68,68,0.15)',title:'Cyclone Warning — Coastal Areas',priority:'critical',badge:'bc',btxt:'Critical',from:'National Disaster Centre',time:'Mar 22',date:'Mar 22',snip:'Category 2 cyclone alert for northern WNB coastal areas. All CDD field teams suspend operations.',status:'Resolved',ref:'WNBCDD-2026-0125',assigned:'All Field Staff'}
+];
+const barD=[{d:'M',v:7},{d:'T',v:12},{d:'W',v:5},{d:'T',v:9},{d:'F',v:8},{d:'S',v:4},{d:'S',v:2}];
+const sysD=[{n:'Alert Engine',ok:true,s:'Operational'},{n:'Query Gateway',ok:true,s:'Operational'},{n:'Database',ok:true,s:'Operational'},{n:'Notification Service',ok:false,s:'Degraded'},{n:'Report Generator',ok:true,s:'Operational'}];
+const tlD=[
+  {c:'#3b82f6',t:'System started',ti:'Today, 06:00 AM',d:'Daily ops began. 14 active alerts in the system.'},
+  {c:'#f59e0b',t:'Alert WNBCDD-0142 raised',ti:'Today, 08:14 AM',d:'Critical infrastructure alert logged by Kimbe District.'},
+  {c:'#22c55e',t:'Alert WNBCDD-0130 resolved',ti:'Today, 09:00 AM',d:'Youth Skills Training notice marked resolved.'},
+  {c:'#8b5cf6',t:'New policy broadcast',ti:'Today, 09:30 AM',d:'Procurement rules update circulated to all staff.'},
+  {c:'#14b8a6',t:'Finance query assigned',ti:'Today, 10:15 AM',d:'Grant disbursement delay routed to Finance Officer.'}
+];
+
+function getAllAlerts(){ return [...alertsDB,...broadcastAlerts]; }
+
+// ═══════════════════════════
+// RENDER
+// ═══════════════════════════
+function renderAll(){
+  renderAlerts();
+  renderBars();
+  renderSysStatus();
+  renderTimeline();
+  renderMyQ();
+  if(currentUser.role==='admin'){ renderOfficers(); renderAdminQ(); renderAdminAlerts(); }
+}
+
+function mkCard(a,delay=0){
+  const d=document.createElement('div');
+  d.className='acard';
+  d.style.animationDelay=delay+'s';
+  const unread=['critical','high'].includes(a.priority);
+  d.innerHTML=`<div class="aicon" style="background:${a.bg};">${a.icon}</div>
+    <div class="abody">
+      <div class="atitle">${a.title}</div>
+      <div class="ameta"><span class="badge ${a.badge}">${a.btxt}</span><span style="color:var(--text3);">${a.date}, ${a.time}</span></div>
+      <div class="asnip">${a.snip}</div>
+    </div>${unread?'<div class="udot"></div>':''}`;
+  d.onclick=()=>openAlert(a);
+  return d;
+}
+
+function renderAlerts(){
+  const rc=document.getElementById('recent-alerts');
+  rc.innerHTML='';
+  getAllAlerts().slice(0,3).forEach((a,i)=>rc.appendChild(mkCard(a,i*.05)));
+  const all=document.getElementById('all-alerts');
+  all.innerHTML='';
+  getAllAlerts().forEach((a,i)=>all.appendChild(mkCard(a,i*.04)));
+  // update badge
+  const open=getAllAlerts().filter(a=>a.status==='Open').length;
+  document.getElementById('alert-badge').textContent=open||'';
+  document.getElementById('alert-badge').style.display=open?'flex':'none';
+}
+
+function filterAlerts(pri){
+  const el=document.getElementById('all-alerts');
+  el.innerHTML='';
+  const list=pri==='all'?getAllAlerts():getAllAlerts().filter(a=>a.priority===pri);
+  if(!list.length){el.innerHTML='<div class="empty"><div class="emptyico">🔍</div><div class="emptytxt">No alerts found</div></div>';return;}
+  list.forEach((a,i)=>el.appendChild(mkCard(a,i*.04)));
+}
+
+function openAlert(a){
+  const isA=currentUser.role==='admin';
+  document.getElementById('mcontent').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:44px;height:44px;border-radius:12px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${a.icon}</div>
+      <div><div class="mtitle">${a.title}</div><span class="badge ${a.badge}">${a.btxt}</span></div>
+    </div>
+    <div class="mdiv"></div>
+    <div class="mfield"><span class="mkey">Ref No.</span><span style="color:var(--blue2);">${a.ref}</span></div>
+    <div class="mfield"><span class="mkey">Reported by</span><span>${a.from}</span></div>
+    <div class="mfield"><span class="mkey">Date & Time</span><span>${a.date}, ${a.time}</span></div>
+    <div class="mfield"><span class="mkey">Assigned to</span><span>${a.assigned}</span></div>
+    <div class="mfield"><span class="mkey">Status</span>
+      <span class="badge ${a.status==='Resolved'?'br':a.status==='In Progress'?'bm':'bc'}">${a.status}</span></div>
+    <div class="mdiv"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Description</div>
+    <div style="font-size:13px;line-height:1.6;">${a.snip}</div>
+    <div class="arow">
+      <button class="abtn abtns" onclick="showToast('📤 Forwarding…');closeModal()">Forward</button>
+      ${isA
+        ?`<button class="abtn abtnd" onclick="showToast('🗑️ Alert removed');closeModal()">Delete</button>
+           <button class="abtn abtnp" onclick="showToast('✅ Marked resolved!');closeModal()">Resolve</button>`
+        :`<button class="abtn abtnp" onclick="showToast('✅ Alert acknowledged!');closeModal()">Acknowledge</button>`}
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function renderBars(){
+  const c=document.getElementById('barchart');
+  c.innerHTML='';
+  const mx=Math.max(...barD.map(b=>b.v));
+  barD.forEach((b,i)=>{
+    const pct=Math.round((b.v/mx)*100);
+    const tod=i===4;
+    const col=document.createElement('div');
+    col.className='barcol';
+    col.innerHTML=`<div class="bar gbar" style="--t:${pct}%;height:${pct}%;background:${tod?'linear-gradient(to top,#1d4ed8,#60a5fa)':'var(--bg3)'};border:1px solid ${tod?'rgba(59,130,246,.4)':'var(--border)'};animation-delay:${.6+i*.07}s;"></div><div class="barlbl">${b.d}</div>`;
+    c.appendChild(col);
+  });
+}
+
+function renderSysStatus(){
+  const el=document.getElementById('sys-status');
+  el.innerHTML='';
+  sysD.forEach(s=>{
+    el.innerHTML+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px;font-size:12px;">
+      <span style="color:var(--text2);">${s.n}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:${s.ok?'var(--green)':'var(--orange)'};"></div>
+        <span style="color:${s.ok?'var(--green2)':'#fdba74'};">${s.s}</span>
+      </div></div>`;
+  });
+}
+
+function renderTimeline(){
+  const el=document.getElementById('timeline');
+  el.innerHTML='';
+  tlD.forEach((t,i)=>{
+    el.innerHTML+=`<div class="tli">
+      <div class="tldw">
+        <div class="tld" style="background:${t.c};border-color:var(--bg);"></div>
+        ${i<tlD.length-1?'<div class="tll"></div>':''}
+      </div>
+      <div class="tlb"><div class="tltitle">${t.t}</div><div class="tltime">${t.ti}</div><div class="tldesc">${t.d}</div></div>
+    </div>`;
+  });
+}
+
+function renderMyQ(){
+  const el=document.getElementById('my-queries');
+  el.innerHTML='';
+  const mine=submittedQueries.filter(q=>q.by===currentUser.username);
+  if(!mine.length){el.innerHTML='<div class="empty"><div class="emptyico">📭</div><div class="emptytxt">No queries submitted yet</div></div>';return;}
+  mine.forEach((q,i)=>el.appendChild(mkCard(q,i*.05)));
+}
+
+// ═══════════════════════════
+// SUBMIT QUERY
+// ═══════════════════════════
+function submitQuery(){
+  const s=document.getElementById('qs').value.trim();
+  const c=document.getElementById('qc').value;
+  const p=document.getElementById('qp').value;
+  const d=document.getElementById('qd').value.trim();
+  const desc=document.getElementById('qdesc').value.trim();
+  if(!s||!c||!p||!desc){showToast('⚠️ Fill all required fields');return;}
+  const pm={critical:{icon:'🔴',bg:'rgba(239,68,68,0.15)',badge:'bc'},high:{icon:'🟠',bg:'rgba(249,115,22,0.15)',badge:'bh'},medium:{icon:'🟡',bg:'rgba(245,166,35,0.15)',badge:'bm'},low:{icon:'🟢',bg:'rgba(34,197,94,0.15)',badge:'bl'}};
+  const pp=pm[p];
+  const ref='WNBCDD-2026-0'+(150+submittedQueries.length+1);
+  const now=new Date();
+  const entry={id:Date.now(),icon:pp.icon,bg:pp.bg,title:s,priority:p,badge:pp.badge,btxt:p.charAt(0).toUpperCase()+p.slice(1),from:d||currentUser.division,time:now.toLocaleTimeString('en-PG',{hour:'2-digit',minute:'2-digit'}),date:'Today',snip:desc,status:'Open',ref,assigned:'Pending Assignment',by:currentUser.username,byName:currentUser.name};
+  submittedQueries.unshift(entry);
+  renderMyQ();
+  if(currentUser.role==='admin') renderAdminQ();
+  ['qs','qc','qp','qd','qdesc','qcon'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  showToast(`✅ Query ${ref} submitted!`);
+}
+
+// ═══════════════════════════
+// ADMIN FUNCTIONS
+// ═══════════════════════════
+function renderOfficers(){
+  const el=document.getElementById('officer-list');
+  el.innerHTML='';
+  Object.values(getAllUsers()).filter(u=>u.role!=='admin').forEach(u=>{
+    const c=document.createElement('div');
+    c.className='ocard';
+    c.innerHTML=`<div class="oav" style="background:${u.avatarGrad};">${u.initials}</div>
+      <div class="oinfo"><div class="oname">${u.name}</div><div class="ometa">${u.title} · <span style="color:var(--blue2);">${u.username}</span></div></div>
+      <div class="oacts">
+        <div class="icbtn" onclick="showToast('✏️ Editing: ${u.name}')">✏️</div>
+        ${dynamicOfficers[u.username]?`<div class="icbtn del" onclick="removeOfficer('${u.username}')">🗑️</div>`:'<div class="icbtn" style="opacity:.3;cursor:default;font-size:12px;" title="Built-in">🔒</div>'}
+      </div>`;
+    el.appendChild(c);
+  });
+}
+
+function removeOfficer(un){
+  delete dynamicOfficers[un];
+  renderOfficers();
+  showToast('🗑️ Officer removed');
+}
+
+function openAddOfficer(){
+  document.getElementById('mcontent').innerHTML=`
+    <div class="mtitle" style="margin-bottom:16px;">➕ Add New Officer</div>
+    <div class="fg"><label class="fl">Full Name</label><input class="fi" type="text" id="no-n" placeholder="e.g. Sarah Bani"/></div>
+    <div class="fg"><label class="fl">Job Title</label><input class="fi" type="text" id="no-t" placeholder="e.g. Community Officer"/></div>
+    <div class="fg"><label class="fl">Division</label><input class="fi" type="text" id="no-d" placeholder="e.g. Community Programs"/></div>
+    <div class="fg"><label class="fl">Station</label><input class="fi" type="text" id="no-s" placeholder="e.g. Kimbe HQ"/></div>
+    <div class="fg"><label class="fl">Username</label><input class="fi" type="text" id="no-u" placeholder="e.g. officer05" autocomplete="off"/></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="no-p" placeholder="Set a secure password"/></div>
+    <div class="arow">
+      <button class="abtn abtns" onclick="closeModal()">Cancel</button>
+      <button class="abtn abtnp" onclick="saveOfficer()">💾 Create Account</button>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function saveOfficer(){
+  const n=document.getElementById('no-n').value.trim();
+  const t=document.getElementById('no-t').value.trim();
+  const d=document.getElementById('no-d').value.trim();
+  const s=document.getElementById('no-s').value.trim();
+  const u=document.getElementById('no-u').value.trim().toLowerCase();
+  const p=document.getElementById('no-p').value;
+  if(!n||!t||!u||!p){showToast('⚠️ Fill all required fields');return;}
+  if(getAllUsers()[u]){showToast('⚠️ Username already taken');return;}
+  if(p.length<6){showToast('⚠️ Password must be 6+ characters');return;}
+  const ini=n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const grads=['linear-gradient(135deg,#1d4ed8,#0891b2)','linear-gradient(135deg,#0f766e,#0891b2)','linear-gradient(135deg,#d97706,#b45309)','linear-gradient(135deg,#059669,#10b981)','linear-gradient(135deg,#7c3aed,#a78bfa)','linear-gradient(135deg,#dc2626,#ef4444)'];
+  dynamicOfficers[u]={username:u,password:p,role:'officer',name:n,title:t,division:d||'Community Development',province:'West New Britain',station:s||'Kimbe HQ',empId:'CDD-'+String(Math.floor(Math.random()*9000)+1000),initials:ini,avatarGrad:grads[Object.keys(dynamicOfficers).length%grads.length]};
+  closeModal();
+  renderOfficers();
+  showToast(`✅ Officer account created: ${u}`);
+}
+
+function broadcastAlert(){
+  const title=document.getElementById('bc-title').value.trim();
+  const pri=document.getElementById('bc-pri').value;
+  const msg=document.getElementById('bc-msg').value.trim();
+  if(!title||!msg){showToast('⚠️ Fill title and message');return;}
+  const pm={critical:{icon:'🔴',bg:'rgba(239,68,68,0.15)',badge:'bc',btxt:'Critical'},high:{icon:'🟠',bg:'rgba(249,115,22,0.15)',badge:'bh',btxt:'High'},medium:{icon:'🟡',bg:'rgba(245,166,35,0.15)',badge:'bm',btxt:'Medium'},info:{icon:'🔵',bg:'rgba(59,130,246,0.15)',badge:'bi',btxt:'Info'}};
+  const pp=pm[pri];
+  const now=new Date();
+  broadcastAlerts.unshift({id:Date.now(),icon:pp.icon,bg:pp.bg,title,priority:pri,badge:pp.badge,btxt:pp.btxt,from:'Admin Broadcast',time:now.toLocaleTimeString('en-PG',{hour:'2-digit',minute:'2-digit'}),date:'Today',snip:msg,status:'Open',ref:'WNBCDD-BC-'+now.getTime().toString().slice(-6),assigned:'All Officers'});
+  document.getElementById('bc-title').value='';
+  document.getElementById('bc-msg').value='';
+  renderAlerts();
+  renderAdminAlerts();
+  showToast('📡 Alert broadcast to all officers!');
+}
+
+function renderAdminQ(){
+  const el=document.getElementById('admin-queries');
+  el.innerHTML='';
+  if(!submittedQueries.length){el.innerHTML='<div class="empty" style="padding:16px 0;"><div class="emptyico">📭</div><div class="emptytxt">No queries yet</div></div>';return;}
+  submittedQueries.forEach((q,i)=>{
+    const c=mkCard(q,i*.05);
+    // Add submitter label
+    const extra=document.createElement('div');
+    extra.style.cssText='font-size:10px;color:var(--purple);margin-top:4px;';
+    extra.textContent='Submitted by: '+q.byName;
+    c.querySelector('.abody').appendChild(extra);
+    el.appendChild(c);
+  });
+}
+
+function renderAdminAlerts(){
+  const el=document.getElementById('admin-alerts');
+  el.innerHTML='';
+  getAllAlerts().slice(0,5).forEach((a,i)=>el.appendChild(mkCard(a,i*.04)));
+}
+
+// ═══════════════════════════
+// MODAL
+// ═══════════════════════════
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('open');
+}
+
+// ═══════════════════════════
+// VIEW SWITCH
+// ═══════════════════════════
+function switchView(name){
+  if(name==='admin'&&currentUser.role!=='admin'){showToast('🔒 Restricted — Admin access only');return;}
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const ni=document.getElementById('nav-'+name);
+  if(ni) ni.classList.add('active');
+  document.querySelector('.scrollw').scrollTop=0;
+}
+
+// ═══════════════════════════
+// ANIMATIONS
+// ═══════════════════════════
+function ctr(el,target,dur=1200){
+  let s=null;
+  requestAnimationFrame(function step(ts){
+    if(!s) s=ts;
+    const p=Math.min((ts-s)/dur,1);
+    el.textContent=Math.round(p*p*target);
+    if(p<1) requestAnimationFrame(step);
+    else el.textContent=target;
+  });
+}
+
+function animRing(pct){
+  const circ=364.4;
+  setTimeout(()=>{
+    document.getElementById('rarc').style.strokeDashoffset=circ-(circ*pct/100);
+    let cur=0;
+    const el=document.getElementById('rpct');
+    const t=setInterval(()=>{cur+=2;if(cur>=pct){cur=pct;clearInterval(t);}el.textContent=cur+'%';},20);
+  },400);
+}
+
+// ═══════════════════════════
+// CLOCK
+// ═══════════════════════════
+(function tick(){
+  const now=new Date();
+  const el=document.getElementById('clock');
+  if(el) el.textContent=now.toLocaleDateString('en-PG',{weekday:'short',day:'numeric',month:'short'})+' · '+now.toLocaleTimeString('en-PG',{hour:'2-digit',minute:'2-digit'});
+  setTimeout(tick,1000);
+})();
+
+// ═══════════════════════════
+// TOAST
+// ═══════════════════════════
+let tt;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ═══════════════════════════
+// SPLASH → LOGIN
+// ═══════════════════════════
+setTimeout(()=>{
+  const sp=document.getElementById('splash');
+  sp.classList.add('hide');
+  setTimeout(()=>{sp.style.display='none';document.getElementById('login-screen').classList.add('show');},500);
+},3600);
+</script>
+</body>
+</html>
